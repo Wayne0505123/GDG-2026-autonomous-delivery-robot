@@ -1,0 +1,37 @@
+[
+    {
+        "id": "P001",
+        "name": "招牌便當",
+        "price": 80,
+        "description": "主菜 + 三樣配菜 + 白飯",
+        "image": "/images/bento.jpg"
+    },
+    {
+        "id": "P002",
+        "name": "雞腿便當",
+        "price": 100,
+        "description": "酥炸雞腿 + 三樣配菜 + 白飯",
+        "image": "/images/chicken.jpg"
+    },
+    {
+        "id": "P003",
+        "name": "排骨便當",
+        "price": 90,
+        "description": "香酥排骨 + 三樣配菜 + 白飯",
+        "image": "/images/pork.jpg"
+    },
+    {
+        "id": "P004",
+        "name": "紅茶",
+        "price": 25,
+        "description": "古早味紅茶 500ml",
+        "image": "/images/tea.jpg"
+    },
+    {
+        "id": "P005",
+        "name": "綠茶",
+        "price": 25,
+        "description": "無糖綠茶 500ml",
+        "image": "/images/greentea.jpg"
+    }
+]
