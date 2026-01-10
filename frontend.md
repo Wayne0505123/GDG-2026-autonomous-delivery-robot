@@ -1,6 +1,6 @@
 # 前端購物平台與即時地圖顯示
 
-> 模組二 | 更新日期：2026/01/09
+> 模組二 | 更新日期：2026/01/10
 
 ---
 
@@ -8,9 +8,12 @@
 
 根據分工文件，我負責(廖紀翔)：
 
-- [x] 使用者購物平台介面設計
+- [ ] 使用者購物平台介面設計（Uber Eats 風格）
+- [ ] **多店家列表與店家頁面**
 - [ ] 商品列表、商品詳細頁
 - [ ] 購物車與訂單建立流程
+- [ ] **使用者註冊/登入系統**
+- [ ] **配送地址管理（新增/編輯/選擇）**
 - [ ] 訂單狀態顯示（未出貨／配送中／完成）
 - [ ] 即時配送地圖介面設計
 - [ ] 車輛位置即時更新與視覺化
@@ -36,29 +39,43 @@
 ```
 frontend/
 ├── public/
-│   └── map.json              # 地圖資料（從後端拿或複製一份）
+│   └── map.json              # 地圖資料
 ├── src/
 │   ├── components/
 │   │   ├── Navbar.jsx
+│   │   ├── StoreCard.jsx     # 店家卡片
 │   │   ├── ProductCard.jsx   # 商品卡片
 │   │   ├── CartDrawer.jsx    # 購物車側邊欄
+│   │   ├── AddressCard.jsx   # 地址卡片
+│   │   ├── AddressForm.jsx   # 新增/編輯地址表單
 │   │   ├── OrderStatus.jsx   # 訂單狀態 badge
 │   │   ├── LiveMap.jsx       # 即時地圖（核心）
 │   │   └── RobotMarker.jsx   # 小車標記
 │   ├── pages/
-│   │   ├── Home.jsx          # 商品列表
+│   │   ├── Home.jsx          # 店家列表
+│   │   ├── Store.jsx         # 店家頁面（該店商品）
 │   │   ├── Product.jsx       # 商品詳細
 │   │   ├── Cart.jsx          # 購物車
-│   │   ├── Checkout.jsx      # 結帳
-│   │   └── Tracking.jsx      # 訂單追蹤 + 地圖
+│   │   ├── Checkout.jsx      # 結帳（選配送地址）
+│   │   ├── Orders.jsx        # 訂單列表
+│   │   ├── Tracking.jsx      # 訂單追蹤 + 地圖
+│   │   ├── Login.jsx         # 登入
+│   │   ├── Register.jsx      # 註冊
+│   │   ├── Account.jsx       # 帳號設定
+│   │   └── Addresses.jsx     # 地址管理
 │   ├── hooks/
 │   │   ├── useWebSocket.js   # WS 連線
+│   │   ├── useAuth.js        # 認證邏輯
 │   │   └── useCart.js        # 購物車邏輯
 │   ├── stores/
-│   │   ├── cartStore.js
-│   │   └── orderStore.js
+│   │   ├── authStore.js      # 使用者狀態
+│   │   ├── cartStore.js      # 購物車狀態
+│   │   └── orderStore.js     # 訂單狀態
 │   ├── api/
-│   │   └── orders.js         # API 呼叫封裝
+│   │   ├── auth.js           # 登入/註冊 API
+│   │   ├── stores.js         # 店家 API
+│   │   ├── orders.js         # 訂單 API
+│   │   └── addresses.js      # 地址 API
 │   ├── App.jsx
 │   └── main.jsx
 ├── index.html
@@ -71,62 +88,127 @@ frontend/
 
 ## 頁面設計
 
-### 1. 首頁 `/` - 商品列表
+### 1. 首頁 `/` - 店家列表
 
 ```
-┌──────────────────────────────────────────┐
-│  🛒 智慧配送商店              [購物車 3] │
-├──────────────────────────────────────────┤
-│  ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐     │
-│  │ 📦  │  │ 📦  │  │ 📦  │  │ 📦  │     │
-│  │商品A│  │商品B│  │商品C│  │商品D│     │
-│  │$100 │  │$200 │  │$150 │  │$300 │     │
-│  │[加入]│  │[加入]│  │[加入]│  │[加入]│     │
-│  └─────┘  └─────┘  └─────┘  └─────┘     │
-└──────────────────────────────────────────┘
++------------------------------------------+
+|  DeliveryBot         [登入] [購物車 3]   |
++------------------------------------------+
+|  分類: [全部] [餐廳] [飲料] [便利商店]   |
++------------------------------------------+
+|  +--------+  +--------+  +--------+      |
+|  | 店家A  |  | 店家B  |  | 店家C  |      |
+|  | 餐廳   |  | 飲料   |  | 便利店 |      |
+|  | 4.5★  |  | 4.8★  |  | 4.2★  |      |
+|  +--------+  +--------+  +--------+      |
++------------------------------------------+
 ```
 
-### 2. 購物車 `/cart`
+### 2. 店家頁面 `/store/:storeId`
 
 ```
-┌──────────────────────────────────────────┐
-│  購物車                                  │
-├──────────────────────────────────────────┤
-│  商品A          x2          $200   [刪除]│
-│  商品B          x1          $200   [刪除]│
-├──────────────────────────────────────────┤
-│  總計                       $400         │
-│                        [前往結帳]        │
-└──────────────────────────────────────────┘
++------------------------------------------+
+|  < 返回                      [購物車 3]  |
++------------------------------------------+
+|  店家A - 美味餐廳                        |
+|  ★ 4.5 | 配送約 5 分鐘                   |
++------------------------------------------+
+|  +------+  +------+  +------+  +------+  |
+|  | 商品A|  | 商品B|  | 商品C|  | 商品D|  |
+|  | $100 |  | $200 |  | $150 |  | $300 |  |
+|  |[加入]|  |[加入]|  |[加入]|  |[加入]|  |
+|  +------+  +------+  +------+  +------+  |
++------------------------------------------+
 ```
 
-### 3. 結帳 `/checkout`
+### 3. 購物車 `/cart`
 
 ```
-┌──────────────────────────────────────────┐
-│  選擇取貨地點                            │
-├──────────────────────────────────────────┤
-│  ○ A 點 - 大門口                         │
-│  ● D 點 - 圖書館                         │
-│  ○ X1 點 - 中庭                          │
-├──────────────────────────────────────────┤
-│                        [確認下單]        │
-└──────────────────────────────────────────┘
++------------------------------------------+
+|  購物車                                  |
++------------------------------------------+
+|  店家A                                   |
+|  商品A          x2          $200   [X]   |
+|  商品B          x1          $200   [X]   |
++------------------------------------------+
+|  總計                       $400         |
+|                        [前往結帳]        |
++------------------------------------------+
 ```
 
-### 4. 訂單追蹤 `/tracking/:orderId`
+### 4. 結帳 `/checkout`
 
 ```
-┌──────────────────────────────────────────┐
-│  訂單 #O1a2b3c4                          │
-│  狀態: 🚗 配送中                         │
-├──────────────────────────────────────────┤
-│                                          │
-│    A ━━━━● X1 ──── X2 ──── D            │
-│          🚗                              │
-│    進度: 40%   預計: 10 秒後抵達         │
-│                                          │
-└──────────────────────────────────────────┘
++------------------------------------------+
+|  結帳                                    |
++------------------------------------------+
+|  配送地址                    [管理地址]  |
+|  +------------------------------------+  |
+|  | (*) 住家 - 資工系館 3F (節點: D)   |  |
+|  | ( ) 公司 - 電機系館 1F (節點: X2)  |  |
+|  | [+ 新增地址]                       |  |
+|  +------------------------------------+  |
++------------------------------------------+
+|  訂單明細                                |
+|  商品A x2                    $200        |
+|  商品B x1                    $200        |
+|  ----------------------------------------|
+|  總計                        $400        |
+|                        [確認下單]        |
++------------------------------------------+
+```
+
+### 5. 訂單追蹤 `/orders/:orderId`
+
+```
++------------------------------------------+
+|  訂單 #O1a2b3c4                          |
+|  狀態: 配送中                            |
++------------------------------------------+
+|                                          |
+|    A ====@ X1 ---- X2 ---- D             |
+|          ^                               |
+|    進度: 40%   預計: 10 秒後抵達         |
+|                                          |
++------------------------------------------+
+|  配送至: 住家 - 資工系館 3F              |
++------------------------------------------+
+```
+
+### 6. 登入 `/login`
+
+```
++------------------------------------------+
+|  登入                                    |
++------------------------------------------+
+|  Email:    [________________]            |
+|  密碼:     [________________]            |
+|                                          |
+|            [登入]                        |
+|                                          |
+|  還沒有帳號？ [註冊]                     |
++------------------------------------------+
+```
+
+### 7. 地址管理 `/account/addresses`
+
+```
++------------------------------------------+
+|  我的地址                                |
++------------------------------------------+
+|  +------------------------------------+  |
+|  | 住家 (預設)                [編輯]  |  |
+|  | 資工系館 3F                        |  |
+|  | 節點: D                            |  |
+|  +------------------------------------+  |
+|  +------------------------------------+  |
+|  | 公司                       [編輯]  |  |
+|  | 電機系館 1F                        |  |
+|  | 節點: X2                           |  |
+|  +------------------------------------+  |
+|                                          |
+|  [+ 新增地址]                            |
++------------------------------------------+
 ```
 
 ---
@@ -272,19 +354,105 @@ function calculateRobotPosition(mapData, route, currentNode, progress) {
 
 ## API 呼叫
 
+### 認證 API
+
 ```javascript
-// api/orders.js
+// api/auth.js
 const API_BASE = '/api';
 
-export async function createOrder(mapId, fromNode, toNode) {
-  const res = await fetch(`${API_BASE}/orders`, {
+export async function register(email, password, name) {
+  const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, name })
+  });
+  return res.json();
+}
+
+export async function login(email, password) {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json(); // { token, user }
+}
+
+export async function getMe(token) {
+  const res = await fetch(`${API_BASE}/users/me`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  return res.json();
+}
+```
+
+### 店家 API
+
+```javascript
+// api/stores.js
+export async function getStores() {
+  const res = await fetch(`${API_BASE}/stores`);
+  return res.json();
+}
+
+export async function getStore(storeId) {
+  const res = await fetch(`${API_BASE}/stores/${storeId}`);
+  return res.json();
+}
+
+export async function getStoreProducts(storeId) {
+  const res = await fetch(`${API_BASE}/stores/${storeId}/products`);
+  return res.json();
+}
+```
+
+### 地址 API
+
+```javascript
+// api/addresses.js
+export async function getAddresses(token) {
+  const res = await fetch(`${API_BASE}/users/me/addresses`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  return res.json();
+}
+
+export async function createAddress(token, address) {
+  const res = await fetch(`${API_BASE}/users/me/addresses`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(address)
+  });
+  return res.json();
+}
+```
+
+### 訂單 API
+
+```javascript
+// api/orders.js
+export async function createOrder(token, storeId, items, addressId) {
+  const res = await fetch(`${API_BASE}/orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify({
-      map_id: mapId,
-      from_node: fromNode,
-      to_node: toNode
+      store_id: storeId,
+      items: items,
+      delivery_address_id: addressId
     })
+  });
+  return res.json();
+}
+
+export async function getOrders(token) {
+  const res = await fetch(`${API_BASE}/orders`, {
+    headers: { 'Authorization': `Bearer ${token}` }
   });
   return res.json();
 }
@@ -301,12 +469,14 @@ export async function getOrder(orderId) {
 
 | 週次 | 任務 | 產出 |
 |------|------|------|
-| W1 | 環境建置 | Vite 專案、Tailwind 設定、Router |
-| W2 | 商品頁面 | Home、ProductCard、mock 商品資料 |
+| W1 | 環境建置 | Vite 專案、Tailwind、Router、店家 mock 資料 |
+| W2 | 店家與商品頁面 | Home (StoreCard)、Store (ProductCard) |
 | W3 | 購物車 | CartDrawer、Zustand store |
-| W4 | 訂單流程 | Checkout、API 串接 |
-| W5 | 即時地圖 | LiveMap、WebSocket hook |
-| W6 | 整合測試 | 與後端聯調、Demo 準備 |
+| W4 | 帳號系統 | Login、Register、authStore、JWT 處理 |
+| W5 | 地址管理 | AddressForm、Addresses 頁面 |
+| W6 | 訂單流程 | Checkout、建立訂單 API 串接 |
+| W7 | 即時地圖 | LiveMap、WebSocket hook |
+| W8 | 整合測試 | 與後端聯調、Demo 準備 |
 
 ---
 
@@ -316,7 +486,10 @@ export async function getOrder(orderId) {
 
 - [x] REST API：`POST /orders`、`GET /orders/:id`
 - [x] WebSocket：`ws://host/ws`
-- [ ] 商品列表 API（或用 mock 資料）
+- [ ] 認證 API：`POST /auth/login`、`POST /auth/register`
+- [ ] 使用者 API：`GET /users/me`
+- [ ] 地址 API：`GET/POST /users/me/addresses`
+- [ ] 店家 API：`GET /stores`、`GET /stores/:id/products`
 - [ ] 地圖資料 API（或直接用 `data/map.json`）
 
 ### 聯調前準備
@@ -353,10 +526,41 @@ npm run build
 
 ## 待辦事項
 
+### Phase 1 - 環境與基礎
 - [ ] 建立 Vite 專案
 - [ ] 設定 Tailwind CSS
+- [ ] 設定 React Router
+
+### Phase 2 - 店家與商品
+- [ ] 刻 StoreCard 元件
 - [ ] 刻 ProductCard 元件
-- [ ] 實作購物車 store
+- [ ] 實作 Home 頁面（店家列表）
+- [ ] 實作 Store 頁面（店家商品）
+
+### Phase 3 - 購物車
+- [ ] 實作 cartStore (Zustand)
+- [ ] 刻 CartDrawer 元件
+
+### Phase 4 - 帳號系統
+- [ ] 實作 authStore (JWT 處理)
+- [ ] 刻 Login 頁面
+- [ ] 刻 Register 頁面
+
+### Phase 5 - 地址管理
+- [ ] 刻 AddressCard 元件
+- [ ] 刻 AddressForm 元件
+- [ ] 實作 Addresses 頁面
+
+### Phase 6 - 訂單流程
+- [ ] 刻 Checkout 頁面（選地址）
+- [ ] 建立訂單 API 串接
+
+### Phase 7 - 即時地圖
 - [ ] 刻 LiveMap 元件
 - [ ] 實作 WebSocket hook
+- [ ] 實作 Tracking 頁面
+
+### Phase 8 - 整合測試
 - [ ] 與後端聯調測試
+- [ ] Demo 準備
+
