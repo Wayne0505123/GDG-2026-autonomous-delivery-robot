@@ -1,151 +1,123 @@
-# ESP32 Autonomous Car System  1111
-## Android ↔ Backend Communication Specification (MVP v1.0)
+# ESP32 Autonomous Delivery Robot (DEV Branch)
 
-This repository contains the **backend service** for an ESP32 autonomous car project.  
-The backend is responsible for **path planning, ETA calculation, and real-time status updates**.  
-Android is a **pure client**, only responsible for UI rendering.
-
----
-
-## 🧭 System Overview
-
-- **Backend**  
-  - Maintains multiple maps (Graph-based)
-  - Computes shortest paths (Dijkstra / A*)
-  - Calculates ETA
-  - Pushes real-time updates via WebSocket
-
-- **Android**  
-  - Sends order requests
-  - Displays route, vehicle position, and ETA
-  - Does **no path or ETA calculation**
-
-- **ESP32**  
-  - Executes assigned route
-  - Reports telemetry (node, progress, speed)
-
+> ⚠️ This is the **development / integration branch** (`dev`).
+> - `dev` may contain unfinished features or unstable changes.
+> - For stable demo/release version, switch to `main`.
 
 ---
 
-## 🗺️ Map Design (Multi-Map Support)
+## Branch Policy
 
-### Core Principles
+### Main Branches
+- ✅ `main`: Stable / demo-ready / release branch (NO direct push)
+- ✅ `dev`: Integration branch for team development
 
-- Backend supports **multiple maps**
-- Each map is uniquely identified by `map_id`
-- Android **must specify `map_id`** when creating an order
-- Android **does not fetch or manage map data**
+### Workflow
+1. Developers create a feature branch **from `dev`**
+2. Push commits to feature branch
+3. Open Pull Request (PR) → merge into `dev`
+4. Only when `dev` is stable → PR from `dev` to `main`
 
-### Example `map_id`
+### Branch Naming Convention
+Use short, module-based prefixes:
 
-```text
-campus_demo
-campus_2f
-city_block_A
-```
+#### Frontend
+- `fe/<feature>`
+  - Example: `fe/map-ui`
 
-## 📡 REST API Specification
+#### Backend
+- `be/<feature>`
+  - Example: `be/order-api`
 
-### 1️⃣ Create Order
+#### Firmware (ESP32)
+- `fw/<feature>`
+  - Example: `fw/mqtt-control`
 
-**Endpoint**
+#### Bug Fix
+- `fix/<bug>`
+  - Example: `fix/backend-timeout`
 
-POST/orders
+---
 
-**Request Body**
-
-```json
-{
-  "map_id": "campus_demo",
-  "from_node": "A",
-  "to_node": "D"
-}
-```
-| Field     | Type   | Required | Description         |
-| --------- | ------ | -------- | ------------------- |
-| map_id    | string | yes      | Target map          |
-| from_node | string | yes      | Start node ID       |
-| to_node   | string | yes      | Destination node ID |
-
-**Response**
-
-```json
-{
-  "order_id": "0cbc3d5cd",
-  "map_id": "campus_demo",
-  "route": ["A", "X1", "X2", "D"],
-  "total_distance_cm": 150,
-  "eta_sec": 14.9
-}
-```
-| Field             | Description                      |
-| ----------------- | -------------------------------- |
-| order_id          | Unique order identifier          |
-| route             | Node sequence for visualization  |
-| total_distance_cm | Total path length                |
-| eta_sec           | Estimated arrival time (seconds) |
-
-**Get Order Status (Optional)**
-
-Used for app restart or WebSocket reconnection.
+## Project Structure
 
 ```
-bash
-GET /orders/{order_id}
-```
-**WebSocket Specification**
-Connection
-```
-Arduino
-ws://<server-ip>:8000/ws
-```
-**Android → Backend (Subscribe Order)**
 
-Send immediately after connection
+.
+├── app/                # Backend (Python)
+├── frontend/           # Frontend (Vite / Web UI)
+├── data/               # Map / test data
+├── robot_simulator.py  # Simulation entry (if used)
+└── README.md
 
-```
-json
-{
-  "type": "subscribe",
-  "payload": {
-    "order_id": "0cbc3d5cd"
-  }
-}
-```
-**ESP32 → Backend (Telemetry)**
-```
-json
-{
-  "type": "telemetry",
-  "payload": {
-    "robot_id": "R1",
-    "order_id": "0cbc3d5cd",
-    "node": "X2",
-    "progress": 0.4,
-    "speed": 12,
-    "state": "MOVING"
-  }
-}
-```
-**Backend → Android (Order Update)**
-```
-json
-{
-  "type": "order_update",
-  "order_id": "0cbc3d5cd",
-  "robot_id": "R1",
-  "node": "X2",
-  "progress": 0.4,
-  "speed": 12,
-  "state": "MOVING"
-}
-```
-| Field    | Description               |
-| -------- | ------------------------- |
-| node     | Current node              |
-| progress | Edge progress (0.0 ~ 1.0) |
-| speed    | cm/s                      |
-| state    | Order state               |
+````
 
+---
 
+## Quick Start (DEV)
 
+### 1) Backend
+```bash
+cd app
+python -m venv venv
+source venv/bin/activate   # macOS/Linux
+# venv\Scripts\activate    # Windows
+
+pip install -r requirements.txt
+python main.py
+````
+
+Backend should run at:
+
+* `http://localhost:8000` (example)
+
+> If port differs, check backend config.
+
+---
+
+### 2) Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend should run at:
+
+* `http://localhost:5173`
+
+---
+
+## Team Collaboration Rules
+
+### ✅ Do
+
+* Always pull latest `dev` before starting work
+* Create a feature branch for each task
+* PR into `dev` (NOT `main`)
+* Keep PR small (one PR = one feature)
+
+### ❌ Don't
+
+* Do NOT push directly to `main`
+* Do NOT mix frontend + backend + firmware changes in one PR
+* Do NOT commit `.env` / secrets
+
+---
+
+## Pull Request Checklist
+
+Before creating PR:
+
+* [ ] Code builds successfully
+* [ ] Basic manual testing done
+* [ ] No secrets committed
+* [ ] PR title clearly describes the change
+
+---
+
+## Notes
+
+* The `dev` branch is expected to change frequently.
+* Use `main` branch for demo/recording/submission.
