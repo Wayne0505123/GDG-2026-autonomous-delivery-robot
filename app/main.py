@@ -8,12 +8,35 @@ from .models import MapData, CreateOrderReq, CreateOrderResp
 from .graph import build_graph, dijkstra, astar
 from .services import estimate_eta_sec
 from .ws import ws_router
+from .state import MAP_STORE, GRAPH_STORE, ORDER_STORE
 
 app = FastAPI(title="ESP32 Car Backend")
 
-from .state import MAP_STORE, GRAPH_STORE, ORDER_STORE
+# ===============================
+# Server Startup Event
+# ===============================
+@app.on_event("startup")
+def load_default_map():
+    """Server 啟動時自動載入預設地圖"""
+    path = "data/map.json"
+    try:
+        print(f"📍 Loading map: {path}")
+        raw = Path(path).read_text(encoding="utf-8")
+        data = json.loads(raw)
+        map_data = MapData.model_validate(data)
+        g = build_graph(map_data)
+
+        MAP_STORE[map_data.map_id] = map_data
+        GRAPH_STORE[map_data.map_id] = g
+
+        print(f"✅ Map loaded: {map_data.map_id} | nodes={len(map_data.nodes)} edges={len(map_data.edges)}")
+    except Exception as e:
+        print(f"❌ Failed to load map: {e}")
 
 
+# ===============================
+# API: Import Map Manually
+# ===============================
 @app.post("/maps/import")
 def import_map(path: str = "data/map.json"):
     try:
@@ -21,18 +44,30 @@ def import_map(path: str = "data/map.json"):
         data = json.loads(raw)
         map_data = MapData.model_validate(data)
         g = build_graph(map_data)
+
         MAP_STORE[map_data.map_id] = map_data
         GRAPH_STORE[map_data.map_id] = g
-        return {"ok": True, "map_id": map_data.map_id, "nodes": len(map_data.nodes), "edges": len(map_data.edges)}
+
+        return {
+            "ok": True,
+            "map_id": map_data.map_id,
+            "nodes": len(map_data.nodes),
+            "edges": len(map_data.edges),
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+# ===============================
+# API: Create Order
+# ===============================
 @app.post("/orders", response_model=CreateOrderResp)
 def create_order(req: CreateOrderReq):
     if req.map_id not in GRAPH_STORE:
         raise HTTPException(status_code=404, detail="map_id not loaded; call /maps/import first")
 
     g = GRAPH_STORE[req.map_id]
+
     try:
         if req.algorithm == "astar":
             route, dist = astar(g, req.from_node, req.to_node)
@@ -61,10 +96,18 @@ def create_order(req: CreateOrderReq):
         eta_sec=eta,
     )
 
+
+# ===============================
+# API: Get Order
+# ===============================
 @app.get("/orders/{order_id}")
 def get_order(order_id: str):
     if order_id not in ORDER_STORE:
         raise HTTPException(status_code=404, detail="order not found")
     return ORDER_STORE[order_id]
 
+
+# ===============================
+# WebSocket
+# ===============================
 app.include_router(ws_router)
