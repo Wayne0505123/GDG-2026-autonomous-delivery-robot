@@ -10,7 +10,8 @@ from .models import MapData, CreateOrderReq, CreateOrderResp
 from .graph import build_graph, dijkstra, astar
 from .services import estimate_eta_sec
 from .ws import ws_router
-from .state import MAP_STORE, GRAPH_STORE, ORDER_STORE
+from .state import MAP_STORE, GRAPH_STORE, ORDER_STORE, fake_orders_db
+from datetime import datetime
 
 app = FastAPI(title="ESP32 Car Backend")
 
@@ -105,6 +106,18 @@ def create_order(req: CreateOrderReq):
         "eta_sec": eta,
         "state": "CREATED",
     }
+
+    # 如果有提供用戶資訊，將訂單加入訂單歷史
+    if req.user_email and req.store_name:
+        fake_orders_db.append({
+            "user_email": req.user_email,
+            "id": order_id,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "store": req.store_name,
+            "items": req.items or [],
+            "total": req.total or 0,
+            "status": "配送中"
+        })
 
     return CreateOrderResp(
         order_id=order_id,

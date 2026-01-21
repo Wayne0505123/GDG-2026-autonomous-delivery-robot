@@ -27,6 +27,11 @@ class CreateOrderReq(BaseModel):
     from_node: str
     to_node: str
     algorithm: Literal["dijkstra", "astar"] = "dijkstra"
+    # 新增：購物車資訊 (可選，用於訂單歷史)
+    store_name: Optional[str] = None
+    items: Optional[List[str]] = None  # ["招牌便當 x1", "紅茶 x2"]
+    total: Optional[int] = None
+    user_email: Optional[str] = None
 
 class CreateOrderResp(BaseModel):
     order_id: str

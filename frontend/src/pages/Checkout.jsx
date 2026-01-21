@@ -40,8 +40,16 @@ export default function Checkout() {
         setError('')
 
         try {
+            // 組裝訂單資訊
+            const orderInfo = {
+                storeName: items[0]?.store_name || '未知店家',
+                items: items.map(item => `${item.name} x${item.quantity}`),
+                total: getTotal(),
+                userEmail: useAuthStore.getState().user?.email
+            }
+            
             // MVP: 假設店家在 A 點，配送到使用者選的節點
-            const order = await createOrder('campus_demo', 'A', selectedNode)
+            const order = await createOrder('campus_demo', 'A', selectedNode, orderInfo)
             setOrder(order)
             setSubmitted(true)
             clearCart()
