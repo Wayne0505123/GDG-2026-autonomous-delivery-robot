@@ -7,15 +7,15 @@ services:
     container_name: robot-db
     restart: always
     environment:
-      - POSTGRES_USER=robot_user      # 帳號
-      - POSTGRES_PASSWORD=robot_pass  # 密碼
-      - POSTGRES_DB=robot_db          # 資料庫名稱
+      - POSTGRES_USER=robot_user # 帳號
+      - POSTGRES_PASSWORD=robot_pass # 密碼
+      - POSTGRES_DB=robot_db # 資料庫名稱
     volumes:
       - postgres_data:/var/lib/postgresql/data # 👈 關鍵！這行讓資料永久保存
-    ports:
-      - "5432:5432" # 開放 Port 讓你用 DBeaver 或 pgAdmin 連線查看
+    # ports:
+    #   - "5433:5432" # 暫時關閉對外，避免 Windows Hyper-V 衝突
 
-  # 2. 後端服務 (有修改)
+    # 2. 後端服務 (有修改)
   backend:
     build: .
     container_name: robot-backend

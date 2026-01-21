@@ -1,71 +1,64 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+const API_BASE = '' // 直接呼叫後端路由，vite.config 已設定 proxy
+
 export const useAuthStore = create(
     persist(
         (set, get) => ({
             user: null,
             token: null,
             isLoggedIn: false,
-            orderHistory: [], // Mock 訂單歷史
+            orderHistory: [],
 
-            // Mock login - 之後串接後端時改這裡
+            // 真正的登入 API
             login: async (email, password) => {
-                // TODO: 呼叫 POST /auth/login
-                // 目前用 mock
-                if (email && password) {
-                    const mockUser = {
-                        id: 'U001',
-                        email: email,
-                        name: email.split('@')[0],
-                        createdAt: new Date().toISOString(),
-                    }
-                    const mockToken = 'mock-token-' + Date.now()
-                    set({ user: mockUser, token: mockToken, isLoggedIn: true })
-                    return { success: true }
-                }
-                return { success: false, error: '請輸入帳號密碼' }
-            },
+                try {
+                    const res = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    })
+                    const data = await res.json()
 
-            // Mock register
-            register: async (email, password, name) => {
-                // TODO: 呼叫 POST /auth/register
-                if (email && password && name) {
-                    const mockUser = {
-                        id: 'U' + Date.now(),
-                        email: email,
-                        name: name,
-                        createdAt: new Date().toISOString(),
+                    if (!res.ok) {
+                        return { success: false, error: data.detail || '登入失敗' }
                     }
-                    const mockToken = 'mock-token-' + Date.now()
-                    // Mock 訂單歷史
-                    const mockOrderHistory = [
-                        {
-                            id: 'O001',
-                            date: '2026-01-18',
-                            store: '讚野烤肉飯',
-                            items: ['招牌便當 x1', '紅茶 x2'],
-                            total: 130,
-                            status: '已完成'
-                        },
-                        {
-                            id: 'O002',
-                            date: '2026-01-19',
-                            store: '台灣第二味',
-                            items: ['珍珠奶茶 x3'],
-                            total: 105,
-                            status: '已完成'
-                        }
-                    ]
+
                     set({
-                        user: mockUser,
-                        token: mockToken,
-                        isLoggedIn: true,
-                        orderHistory: mockOrderHistory
+                        user: data.user,
+                        token: data.token,
+                        isLoggedIn: true
                     })
                     return { success: true }
+                } catch (err) {
+                    return { success: false, error: '網路錯誤，請稍後再試' }
                 }
-                return { success: false, error: '請填寫所有欄位' }
+            },
+
+            // 真正的註冊 API
+            register: async (email, password, name) => {
+                try {
+                    const res = await fetch(`${API_BASE}/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, name })
+                    })
+                    const data = await res.json()
+
+                    if (!res.ok) {
+                        return { success: false, error: data.detail || '註冊失敗' }
+                    }
+
+                    set({
+                        user: data.user,
+                        token: data.token,
+                        isLoggedIn: true
+                    })
+                    return { success: true }
+                } catch (err) {
+                    return { success: false, error: '網路錯誤，請稍後再試' }
+                }
             },
 
             logout: () => {
@@ -73,33 +66,80 @@ export const useAuthStore = create(
             },
 
             // 更新使用者名稱
-            updateName: (newName) => {
-                const user = get().user
-                if (user) {
-                    set({ user: { ...user, name: newName } })
+            updateName: async (newName) => {
+                const token = get().token
+                try {
+                    const res = await fetch(`${API_BASE}/users/me`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ name: newName })
+                    })
+                    const data = await res.json()
+
+                    if (!res.ok) {
+                        return { success: false, error: data.detail || '更新失敗' }
+                    }
+
+                    set({ user: data.user })
                     return { success: true }
+                } catch (err) {
+                    return { success: false, error: '網路錯誤' }
                 }
-                return { success: false, error: '未登入' }
             },
 
-            // 更新密碼 (mock)
-            updatePassword: (oldPassword, newPassword) => {
-                // TODO: 呼叫後端 API 驗證舊密碼
-                // 目前 mock 直接成功
-                if (oldPassword && newPassword) {
+            // 更新密碼
+            updatePassword: async (oldPassword, newPassword) => {
+                const token = get().token
+                try {
+                    const res = await fetch(`${API_BASE}/users/me`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+                    })
+                    const data = await res.json()
+
+                    if (!res.ok) {
+                        return { success: false, error: data.detail || '更新失敗' }
+                    }
+
                     return { success: true }
+                } catch (err) {
+                    return { success: false, error: '網路錯誤' }
                 }
-                return { success: false, error: '請填寫密碼' }
             },
 
-            // 新增訂單到歷史
+            // 取得訂單歷史
+            fetchOrderHistory: async () => {
+                const token = get().token
+                if (!token) return
+
+                try {
+                    const res = await fetch(`${API_BASE}/users/me/orders`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                    if (res.ok) {
+                        const orders = await res.json()
+                        set({ orderHistory: orders })
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch order history:', err)
+                }
+            },
+
+            // 新增訂單到歷史 (本地)
             addOrderToHistory: (order) => {
                 const history = get().orderHistory
                 set({ orderHistory: [order, ...history] })
             }
         }),
         {
-            name: 'auth-storage', // localStorage key
+            name: 'auth-storage',
         }
     )
 )

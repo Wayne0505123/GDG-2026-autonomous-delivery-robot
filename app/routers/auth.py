@@ -76,7 +76,7 @@ def login(user_in: UserLogin):
         raise HTTPException(status_code=400, detail="帳號或密碼錯誤")
     
     # 3. 產生 Token
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(data={"sub": user["email"]})
     
     # 4. 回傳
     return {

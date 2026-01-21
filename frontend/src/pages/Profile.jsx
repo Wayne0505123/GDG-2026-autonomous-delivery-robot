@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 
 export default function Profile() {
-    const { user, isLoggedIn, orderHistory, updateName, updatePassword, logout } = useAuthStore()
+    const { user, isLoggedIn, orderHistory, updateName, updatePassword, fetchOrderHistory } = useAuthStore()
     const navigate = useNavigate()
 
     const [activeTab, setActiveTab] = useState('info')
@@ -12,6 +12,7 @@ export default function Profile() {
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [message, setMessage] = useState({ type: '', text: '' })
+    const [loading, setLoading] = useState(false)
 
     // 未登入跳轉
     if (!isLoggedIn) {
@@ -19,13 +20,20 @@ export default function Profile() {
         return null
     }
 
-    const handleUpdateName = (e) => {
+    // 載入訂單歷史
+    useEffect(() => {
+        fetchOrderHistory()
+    }, [])
+
+    const handleUpdateName = async (e) => {
         e.preventDefault()
         if (!newName.trim()) {
             setMessage({ type: 'error', text: '請輸入姓名' })
             return
         }
-        const result = updateName(newName)
+        setLoading(true)
+        const result = await updateName(newName)
+        setLoading(false)
         if (result.success) {
             setMessage({ type: 'success', text: '姓名已更新' })
         } else {
@@ -33,7 +41,7 @@ export default function Profile() {
         }
     }
 
-    const handleUpdatePassword = (e) => {
+    const handleUpdatePassword = async (e) => {
         e.preventDefault()
         setMessage({ type: '', text: '' })
 
@@ -52,7 +60,9 @@ export default function Profile() {
             return
         }
 
-        const result = updatePassword(oldPassword, newPassword)
+        setLoading(true)
+        const result = await updatePassword(oldPassword, newPassword)
+        setLoading(false)
         if (result.success) {
             setMessage({ type: 'success', text: '密碼已更新' })
             setOldPassword('')
@@ -100,8 +110,8 @@ export default function Profile() {
                         <button
                             onClick={() => setActiveTab('info')}
                             className={`px-6 py-3 font-medium cursor-pointer transition-colors ${activeTab === 'info'
-                                    ? 'text-orange-600 border-b-2 border-orange-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-orange-600 border-b-2 border-orange-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             帳號資訊
@@ -109,8 +119,8 @@ export default function Profile() {
                         <button
                             onClick={() => setActiveTab('orders')}
                             className={`px-6 py-3 font-medium cursor-pointer transition-colors ${activeTab === 'orders'
-                                    ? 'text-orange-600 border-b-2 border-orange-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-orange-600 border-b-2 border-orange-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             訂單記錄
@@ -118,8 +128,8 @@ export default function Profile() {
                         <button
                             onClick={() => setActiveTab('settings')}
                             className={`px-6 py-3 font-medium cursor-pointer transition-colors ${activeTab === 'settings'
-                                    ? 'text-orange-600 border-b-2 border-orange-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-orange-600 border-b-2 border-orange-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             修改資料
@@ -131,8 +141,8 @@ export default function Profile() {
                 <div className="p-6">
                     {message.text && (
                         <div className={`mb-4 p-3 rounded-lg text-sm ${message.type === 'success'
-                                ? 'bg-green-50 text-green-600'
-                                : 'bg-red-50 text-red-600'
+                            ? 'bg-green-50 text-green-600'
+                            : 'bg-red-50 text-red-600'
                             }`}>
                             {message.text}
                         </div>
@@ -180,8 +190,8 @@ export default function Profile() {
                                                 <span className="text-gray-400 text-sm ml-2">#{order.id}</span>
                                             </div>
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.status === '已完成'
-                                                    ? 'bg-green-100 text-green-600'
-                                                    : 'bg-orange-100 text-orange-600'
+                                                ? 'bg-green-100 text-green-600'
+                                                : 'bg-orange-100 text-orange-600'
                                                 }`}>
                                                 {order.status}
                                             </span>
