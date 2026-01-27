@@ -24,7 +24,13 @@ services:
     volumes:
       - .:/app
     depends_on:
+<<<<<<< HEAD
       - db
+=======
+      - db # 確保資料庫先啟動
+    env_file:
+      - .env
+>>>>>>> 0d44fe25c659fffe92c63538daf3db0a381cefe3
     environment:
       - DATABASE_URL=postgresql://robot_user:robot_pass@db:5432/robot_db
 
