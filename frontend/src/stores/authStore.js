@@ -31,7 +31,7 @@ export const useAuthStore = create(
                         isLoggedIn: true
                     })
                     return { success: true }
-                } catch (err) {
+                } catch {
                     return { success: false, error: '網路錯誤，請稍後再試' }
                 }
             },
@@ -56,7 +56,7 @@ export const useAuthStore = create(
                         isLoggedIn: true
                     })
                     return { success: true }
-                } catch (err) {
+                } catch {
                     return { success: false, error: '網路錯誤，請稍後再試' }
                 }
             },
@@ -85,7 +85,7 @@ export const useAuthStore = create(
 
                     set({ user: data.user })
                     return { success: true }
-                } catch (err) {
+                } catch {
                     return { success: false, error: '網路錯誤' }
                 }
             },
@@ -109,7 +109,7 @@ export const useAuthStore = create(
                     }
 
                     return { success: true }
-                } catch (err) {
+                } catch {
                     return { success: false, error: '網路錯誤' }
                 }
             },
@@ -127,8 +127,8 @@ export const useAuthStore = create(
                         const orders = await res.json()
                         set({ orderHistory: orders })
                     }
-                } catch (err) {
-                    console.error('Failed to fetch order history:', err)
+                } catch {
+                    console.error('Failed to fetch order history')
                 }
             },
 

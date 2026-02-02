@@ -14,16 +14,14 @@ export default function Profile() {
     const [message, setMessage] = useState({ type: '', text: '' })
     const [loading, setLoading] = useState(false)
 
-    // 未登入跳轉
-    if (!isLoggedIn) {
-        navigate('/login')
-        return null
-    }
-
     // 載入訂單歷史
     useEffect(() => {
-        fetchOrderHistory()
-    }, [])
+        if (isLoggedIn) {
+            fetchOrderHistory()
+        } else {
+            navigate('/login')
+        }
+    }, [isLoggedIn, fetchOrderHistory, navigate])
 
     const handleUpdateName = async (e) => {
         e.preventDefault()
@@ -224,9 +222,10 @@ export default function Profile() {
                                     />
                                     <button
                                         type="submit"
-                                        className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors cursor-pointer"
+                                        disabled={loading}
+                                        className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50"
                                     >
-                                        更新
+                                        {loading ? '更新中...' : '更新'}
                                     </button>
                                 </div>
                             </form>
@@ -265,9 +264,10 @@ export default function Profile() {
                                 />
                                 <button
                                     type="submit"
-                                    className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors cursor-pointer"
+                                    disabled={loading}
+                                    className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50"
                                 >
-                                    更新密碼
+                                    {loading ? '更新中...' : '更新密碼'}
                                 </button>
                             </form>
                         </div>

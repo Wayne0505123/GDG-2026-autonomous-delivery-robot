@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useOrderStore } from '../stores/orderStore'
 import { useWebSocket } from '../hooks/useWebSocket'
@@ -9,7 +9,6 @@ export default function Tracking() {
     const { orderId } = useParams()
     const [mapData, setMapData] = useState(null)
     const [order, setOrder] = useState(null)
-    const [robotPosition, setRobotPosition] = useState(null)
 
     const { robotState, connected } = useWebSocket(orderId)
     const storedOrder = useOrderStore((state) => state.currentOrder)
@@ -17,13 +16,15 @@ export default function Tracking() {
     // Load order data
     useEffect(() => {
         if (storedOrder && storedOrder.order_id === orderId) {
-            setOrder(storedOrder)
-        } else {
-            getOrder(orderId)
-                .then(data => setOrder(data))
-                .catch(err => console.error('Failed to load order:', err))
+            return
         }
+        getOrder(orderId)
+            .then(data => setOrder(data))
+            .catch(_err => console.error('Failed to load order:', _err))
     }, [orderId, storedOrder])
+
+    // 使用 storedOrder 作為預設值
+    const activeOrder = order || (storedOrder?.order_id === orderId ? storedOrder : null)
 
     // Load map data
     useEffect(() => {
@@ -39,18 +40,17 @@ export default function Tracking() {
             })
     }, [])
 
-    // Calculate robot position from state
-    useEffect(() => {
-        if (!robotState || !mapData || !order?.route) return
+    // 計算機器人位置（使用 useMemo 避免 effect 內 setState）
+    const robotPosition = useMemo(() => {
+        if (!robotState || !mapData || !activeOrder?.route) return null
 
         const { node, progress } = robotState
-        const route = order.route
+        const route = activeOrder.route
         const nodeIndex = route.indexOf(node)
 
         if (nodeIndex === -1) {
-            const n = mapData.nodes.find(n => n.id === node)
-            if (n) setRobotPosition({ x: n.x, y: n.y })
-            return
+            const found = mapData.nodes.find(n => n.id === node)
+            return found ? { x: found.x, y: found.y } : null
         }
 
         const currentNode = mapData.nodes.find(n => n.id === route[nodeIndex])
@@ -59,14 +59,13 @@ export default function Tracking() {
             : null
 
         if (currentNode && nextNode) {
-            setRobotPosition({
+            return {
                 x: currentNode.x + (nextNode.x - currentNode.x) * progress,
                 y: currentNode.y + (nextNode.y - currentNode.y) * progress
-            })
-        } else if (currentNode) {
-            setRobotPosition({ x: currentNode.x, y: currentNode.y })
+            }
         }
-    }, [robotState, mapData, order])
+        return currentNode ? { x: currentNode.x, y: currentNode.y } : null
+    }, [robotState, mapData, activeOrder])
 
     const getStatusText = () => {
         if (!robotState) return '等待配送...'
@@ -123,7 +122,7 @@ export default function Tracking() {
                         <LiveMap
                             mapData={mapData}
                             robotPosition={robotPosition}
-                            route={order?.route}
+                            route={activeOrder?.route}
                         />
                     )}
 
@@ -144,13 +143,13 @@ export default function Tracking() {
                         </div>
                     )}
 
-                    {order && (
+                    {activeOrder && (
                         <div className="mt-6 p-4 bg-orange-50 rounded-lg">
                             <div className="text-sm text-gray-600">
-                                <strong>路線：</strong> {order.route?.join(' → ')}
+                                <strong>路線：</strong> {activeOrder.route?.join(' → ')}
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
-                                <strong>預計時間：</strong> {order.eta_sec?.toFixed(1)} 秒
+                                <strong>預計時間：</strong> {activeOrder.eta_sec?.toFixed(1)} 秒
                             </div>
                         </div>
                     )}
