@@ -6,6 +6,8 @@ from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.database import Base, get_db
+from app.sql_models import StoreDB, ProductDB
+from app.routers.stores import STORE_STORE, PRODUCT_STORE
 
 
 # 使用 SQLite 記憶體資料庫進行測試
@@ -35,6 +37,18 @@ def client():
 
     # 覆蓋資料庫依賴
     app.dependency_overrides[get_db] = override_get_db
+
+    # 植入商店與商品測試資料
+    db = TestingSessionLocal()
+    try:
+        if db.query(StoreDB).count() == 0:
+            for info in STORE_STORE.values():
+                db.add(StoreDB(**info))
+            for info in PRODUCT_STORE.values():
+                db.add(ProductDB(**info))
+            db.commit()
+    finally:
+        db.close()
 
     with TestClient(app) as test_client:
         yield test_client
