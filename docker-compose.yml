@@ -13,36 +13,36 @@ services:
     ports:
       - "5433:5432"
 
-  # 2. 後端服務 (這裡是修正重點)
+  # 2. 後端服務 (Python)
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: robot-backend
+    restart: always
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
-    depends_on:
-      - db            # 👈 保留：確保資料庫先啟動
-    env_file:         # 👈 新增：這是同學加的，用來讀取 .env 裡的 JWT 金鑰
+    env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://robot_user:robot_pass@db:5432/robot_db
-      - ALLOWED_ORIGINS=http://localhost:5173,http://robot-frontend:5173
+      - DATABASE_URL=postgresql://robot_user:robot_pass@database-1.cti2w22aos1h.ap-southeast-2.rds.amazonaws.com:5432/robot_db
+      - ALLOWED_ORIGINS=http://localhost,http://your-alb-dns-name.amazonaws.com
+    depends_on:
+      - db
 
-  # 3. 前端服務
+  # 3. 前端服務 (Nginx)
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod # 務必確認你在 frontend 資料夾下新增了這個檔案
     container_name: robot-frontend
+    restart: always
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000 # 本地測試用，部署時需重新 build
     depends_on:
       - backend
-    environment:
-      - VITE_API_URL=http://localhost:8000
-      - VITE_API_TARGET=http://backend:8000
 
 # 4. 定義磁碟區
 volumes:

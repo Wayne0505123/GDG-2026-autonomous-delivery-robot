@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from ..database import get_db
+from ..sql_models import StoreDB, ProductDB
 
 router = APIRouter(prefix="/stores", tags=["stores"])
 
@@ -310,19 +313,22 @@ PRODUCT_STORE = {
 
 
 @router.get("")
-def get_stores():
-    return list(STORE_STORE.values())
-
+def get_stores(db: Session = Depends(get_db)):
+    # 改為從雲端資料庫抓取
+    return db.query(StoreDB).all()
 
 @router.get("/{store_id}")
-def get_store(store_id: str):
-    if store_id not in STORE_STORE:
+def get_store(store_id: str, db: Session = Depends(get_db)):
+    # 改為從雲端資料庫篩選
+    store = db.query(StoreDB).filter(StoreDB.id == store_id).first()
+    if not store:
         raise HTTPException(status_code=404, detail="store not found")
-    return STORE_STORE[store_id]
-
+    return store
 
 @router.get("/{store_id}/products")
-def get_products_by_store(store_id: str):
-    if store_id not in STORE_STORE:
+def get_products_by_store(store_id: str, db: Session = Depends(get_db)):
+    # 確保店家存在，並從資料庫抓取該店商品
+    store = db.query(StoreDB).filter(StoreDB.id == store_id).first()
+    if not store:
         raise HTTPException(status_code=404, detail="store not found")
-    return [p for p in PRODUCT_STORE.values() if p["store_id"] == store_id]
+    return db.query(ProductDB).filter(ProductDB.store_id == store_id).all()

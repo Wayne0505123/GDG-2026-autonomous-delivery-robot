@@ -1,33 +1,58 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Float, JSON, ForeignKey
 from .database import Base
 from datetime import datetime
+from sqlalchemy.orm import relationship
 
-# 1. 使用者模型 (對應 main.py 的 import User)
+# 1. 使用者模型
 class User(Base):
     __tablename__ = "users"
 
     email = Column(String, primary_key=True, index=True)
     username = Column(String)
     hashed_password = Column(String)
+    name = Column(String) # 補齊註冊需要的 name 欄位
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# 2. 訂單模型 (補齊了所有 main.py 會用到的欄位)
-class OrderDB(Base):
-    __tablename__ = "orders" # 資料庫裡的表格名稱
+# 2. 店家模型
+class StoreDB(Base):
+    __tablename__ = "stores"
 
-    # 基本資訊
-    id = Column(String, primary_key=True, index=True) # 對應 order_id
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String)
+    description = Column(String)
+    category = Column(String)
+    rating = Column(Float)
+    deliveryTime = Column(String)
+    image = Column(String)
+    location_node = Column(String)
+
+# 3. 商品模型
+class ProductDB(Base):
+    __tablename__ = "products"
+
+    id = Column(String, primary_key=True, index=True)
+    store_id = Column(String, ForeignKey("stores.id"))
+    name = Column(String)
+    price = Column(Integer)
+    description = Column(String)
+    image = Column(String)
+
+# 4. 訂單模型
+class OrderDB(Base):
+    __tablename__ = "orders"
+
+    id = Column(String, primary_key=True, index=True)
     map_id = Column(String, index=True)
-    status = Column(String, default="CREATED") # 對應 state
+    status = Column(String, default="CREATED")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # 導航數據
     total_distance_cm = Column(Float)
     eta_sec = Column(Float)
-    route = Column(JSON)  # 👈 關鍵！用來存路徑陣列 [node1, node2...]
+    route = Column(JSON) 
 
-    # 訂單商業邏輯 (對應 fake_orders_db 的欄位)
+    # 訂單商業邏輯
     user_email = Column(String, index=True)
     store_name = Column(String)
-    items = Column(JSON)  # 👈 關鍵！用來存商品列表 [{"name": "..", "price": 10}]
-    total_amount = Column(Float) # 對應 total
+    items = Column(JSON)
+    total_amount = Column(Float)

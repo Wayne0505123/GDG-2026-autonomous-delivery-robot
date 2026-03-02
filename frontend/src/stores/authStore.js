@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-const API_BASE = '/api'
+// 從環境變數讀取後端網址，解決連線到前端 Nginx 的問題
+const API_BASE = import.meta.env.VITE_API_URL
 
 export const useAuthStore = create(
     persist(
@@ -14,6 +15,7 @@ export const useAuthStore = create(
             // 真正的登入 API
             login: async (email, password) => {
                 try {
+                    // 使用絕對路徑連往後端
                     const res = await fetch(`${API_BASE}/auth/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -31,7 +33,8 @@ export const useAuthStore = create(
                         isLoggedIn: true
                     })
                     return { success: true }
-                } catch {
+                } catch (err) {
+                    console.error('Login error:', err)
                     return { success: false, error: '網路錯誤，請稍後再試' }
                 }
             },
@@ -139,7 +142,7 @@ export const useAuthStore = create(
             }
         }),
         {
-            name: 'auth-storage',
+            name: 'auth-storage', // 這裡會把資料存在 localStorage
         }
     )
 )

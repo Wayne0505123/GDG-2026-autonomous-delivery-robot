@@ -9,8 +9,15 @@ export default function Home() {
     const categories = ['全部', '餐廳', '飲料', '便利商店']
 
     useEffect(() => {
-        fetch('/api/stores')
-            .then(res => res.json())
+        // 從環境變數讀取後端網址
+        const apiUrl = import.meta.env.VITE_API_URL;
+        
+        // 使用絕對路徑連往後端
+        fetch(`${apiUrl}/stores`)
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
             .then(data => {
                 setStores(data)
                 setLoading(false)
