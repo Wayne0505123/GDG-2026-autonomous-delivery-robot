@@ -17,7 +17,7 @@ from .services import estimate_eta_sec
 from .state import MAP_STORE, GRAPH_STORE
 
 # Router
-from .routers import stores, products, auth, users
+from .routers import stores, products, auth, users, planner
 from .routers.users import get_current_user
 from .ws import ws_router
 
@@ -46,6 +46,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(stores.router)
 app.include_router(products.router)
+app.include_router(planner.router)
 app.include_router(ws_router)
 
 # 載入地圖邏輯
