@@ -31,12 +31,12 @@ services:
     container_name: robot-backend
     restart: always
     ports:
-      - "8000:8000"
+      - "8001:8000"
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://robot_user:robot_pass@database-1.cti2w22aos1h.ap-southeast-2.rds.amazonaws.com:5432/robot_db
-      - ALLOWED_ORIGINS=http://localhost,http://your-alb-dns-name.amazonaws.com
+      - DATABASE_URL=postgresql://robot_user:robot_pass@db:5432/robot_db
+      - ALLOWED_ORIGINS=http://localhost,http://3.27.165.128
     depends_on:
       - db
       - mosquitto
@@ -51,7 +51,7 @@ services:
     ports:
       - "80:80"
     environment:
-      - VITE_API_URL=http://localhost:8000 # 本地測試用，部署時需重新 build
+      - VITE_API_URL=http://3.27.165.128:8001 # 本地測試用，部署時需重新 build
     depends_on:
       - backend
 
