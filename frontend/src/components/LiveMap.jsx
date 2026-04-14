@@ -99,7 +99,7 @@ export default function LiveMap({ mapData, robotPosition, route, size = 'lg' }) 
                 ref={canvasRef}
                 width={450}
                 height={450}
-                className={size === 'sm' ? 'max-w-[200px] mx-auto block' : 'w-full'}
+                className={size === 'sm' ? 'max-w-[300px] mx-auto block' : 'w-full'}
             />
         </div>
     )

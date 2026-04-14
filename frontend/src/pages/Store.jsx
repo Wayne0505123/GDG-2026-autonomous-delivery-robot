@@ -79,8 +79,18 @@ export default function Store() {
                 </div>
             </div>
 
+            <h2 className="text-xl font-bold text-gray-800 mb-4">菜單</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map(product => (
+                    <ProductCard
+                        key={product.id}
+                        product={{ ...product, store_name: store.name, store_id: storeId }}
+                    />
+                ))}
+            </div>
+
             {mapData && store?.location_node && (
-                <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+                <div className="bg-white rounded-xl shadow-md p-6 mt-8">
                     <h2 className="text-lg font-bold text-gray-800 mb-3">店家位置</h2>
                     <LiveMap
                         mapData={mapData}
@@ -91,16 +101,6 @@ export default function Store() {
                     <p className="text-sm text-gray-500 mt-2 text-center">節點 {store.location_node}</p>
                 </div>
             )}
-
-            <h2 className="text-xl font-bold text-gray-800 mb-4">菜單</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map(product => (
-                    <ProductCard
-                        key={product.id}
-                        product={{ ...product, store_name: store.name, store_id: storeId }}
-                    />
-                ))}
-            </div>
 
             {products.length === 0 && (
                 <div className="text-center text-gray-500 py-12">
