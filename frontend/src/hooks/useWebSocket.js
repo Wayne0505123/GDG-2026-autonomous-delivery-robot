@@ -7,6 +7,7 @@ export function useWebSocket(orderId) {
     const ws = useRef(null)
     const retryCount = useRef(0)
     const retryTimeout = useRef(null)
+    const connectRef = useRef(null)
     const [robotState, setRobotState] = useState(null)
     const [connected, setConnected] = useState(false)
     const [error, setError] = useState(null)
@@ -52,7 +53,7 @@ export function useWebSocket(orderId) {
             if (retryCount.current < MAX_RETRIES) {
                 retryCount.current += 1
                 console.log(`WebSocket 斷線，${RETRY_DELAY_MS / 1000} 秒後重連 (${retryCount.current}/${MAX_RETRIES})`)
-                retryTimeout.current = setTimeout(() => connect(), RETRY_DELAY_MS)
+                retryTimeout.current = setTimeout(() => connectRef.current?.(), RETRY_DELAY_MS)
             } else {
                 setError('連線失敗，請重新整理頁面')
                 console.error('WebSocket 重連失敗，已達最大重試次數')
@@ -63,6 +64,10 @@ export function useWebSocket(orderId) {
             setConnected(false)
         }
     }, [orderId])
+
+    useEffect(() => {
+        connectRef.current = connect
+    }, [connect])
 
     useEffect(() => {
         connect()
