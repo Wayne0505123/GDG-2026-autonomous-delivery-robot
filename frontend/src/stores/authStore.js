@@ -32,6 +32,14 @@ export const useAuthStore = create(
                         token: data.token,
                         isLoggedIn: true
                     })
+                    // 登入後立即從後端同步最新資料（含頭像）
+                    const meRes = await fetch(`${API_BASE}/users/me`, {
+                        headers: { 'Authorization': `Bearer ${data.token}` }
+                    })
+                    if (meRes.ok) {
+                        const me = await meRes.json()
+                        set({ user: me })
+                    }
                     return { success: true }
                 } catch (err) {
                     console.error('Login error:', err)
