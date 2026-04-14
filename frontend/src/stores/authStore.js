@@ -135,6 +135,29 @@ export const useAuthStore = create(
                 }
             },
 
+            // 更新頭像
+            updateAvatar: async (avatarDataUrl) => {
+                const token = get().token
+                try {
+                    const res = await fetch(`${API_BASE}/users/me/avatar`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ avatar: avatarDataUrl })
+                    })
+                    const data = await res.json()
+                    if (!res.ok) {
+                        return { success: false, error: data.detail || '更新失敗' }
+                    }
+                    set({ user: { ...get().user, avatar: data.avatar } })
+                    return { success: true }
+                } catch {
+                    return { success: false, error: '網路錯誤' }
+                }
+            },
+
             // 新增訂單到歷史 (本地)
             addOrderToHistory: (order) => {
                 const history = get().orderHistory
