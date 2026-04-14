@@ -11,7 +11,7 @@ export default function Tracking() {
     const [mapData, setMapData] = useState(null)
     const [order, setOrder] = useState(null)
 
-    const { robotState, connected } = useWebSocket(orderId)
+    const { robotState, connected, error } = useWebSocket(orderId)
     const storedOrder = useOrderStore((state) => state.currentOrder)
 
     // Load order data
@@ -112,6 +112,18 @@ export default function Tracking() {
                                     <span className="text-green-500 text-sm flex items-center gap-1">
                                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                                         即時連線中
+                                    </span>
+                                )}
+                                {!connected && !error && (
+                                    <span className="text-yellow-500 text-sm flex items-center gap-1">
+                                        <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                                        連線中...
+                                    </span>
+                                )}
+                                {error && (
+                                    <span className="text-red-500 text-sm flex items-center gap-1">
+                                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                        {error}
                                     </span>
                                 )}
                             </div>
