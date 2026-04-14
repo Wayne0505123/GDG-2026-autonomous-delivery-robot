@@ -86,6 +86,7 @@ export default function Store() {
                         mapData={mapData}
                         route={[store.location_node]}
                         robotPosition={null}
+                        size="sm"
                     />
                     <p className="text-sm text-gray-500 mt-2 text-center">節點 {store.location_node}</p>
                 </div>

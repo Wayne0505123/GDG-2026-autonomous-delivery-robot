@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export default function LiveMap({ mapData, robotPosition, route }) {
+export default function LiveMap({ mapData, robotPosition, route, size = 'lg' }) {
     const canvasRef = useRef(null)
 
     useEffect(() => {
@@ -99,7 +99,7 @@ export default function LiveMap({ mapData, robotPosition, route }) {
                 ref={canvasRef}
                 width={450}
                 height={450}
-                className="w-full"
+                className={size === 'sm' ? 'max-w-[200px] mx-auto block' : 'w-full'}
             />
         </div>
     )
