@@ -222,6 +222,13 @@ class MQTTBridge:
                 self.robot_telemetry_callbacks[robot_id](payload)
 
         self.client.subscribe("robot/+/telemetry", on_telemetry)
+
+        # Plan executor: robot/+/plan → car/cmd
+        from .plan_executor import get_plan_executor
+        executor = get_plan_executor()
+        self.client.subscribe("robot/+/plan", executor.on_new_plan)
+        self.client.subscribe("car/node_id", executor.on_node_update)
+
         logger.info("MQTT bridge started")
         return True
 
