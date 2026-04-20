@@ -6,8 +6,8 @@ RUN npm install
 COPY . .
 
 # --- 在這裡插入兩行，把後端網址寫死 ---
-ARG VITE_API_URL=https://mmvknvmrtw.ap-southeast-2.awsapprunner.com
-ENV VITE_API_URL=https://mmvknvmrtw.ap-southeast-2.awsapprunner.com
+ARG VITE_API_URL=http://3.27.165.128:8001
+ENV VITE_API_URL=http://3.27.165.128:8001
 
 RUN npm run build
 

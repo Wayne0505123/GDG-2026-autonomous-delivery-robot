@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Float, JSON, ForeignKey
 from .database import Base
 from datetime import datetime
-from sqlalchemy.orm import relationship
 
 # 1. 使用者模型
 class User(Base):
@@ -12,6 +11,7 @@ class User(Base):
     hashed_password = Column(String)
     name = Column(String) # 補齊註冊需要的 name 欄位
     created_at = Column(DateTime, default=datetime.utcnow)
+    avatar = Column(String, nullable=True)  # base64 圖片資料
 
 # 2. 店家模型
 class StoreDB(Base):
@@ -56,3 +56,18 @@ class OrderDB(Base):
     store_name = Column(String)
     items = Column(JSON)
     total_amount = Column(Float)
+    assigned_robot_id = Column(String, nullable=True, index=True)
+
+
+# 5. 小車狀態模型（持久化 GlobalPlannerState）
+class RobotStateDB(Base):
+    __tablename__ = "robot_states"
+
+    robot_id = Column(String, primary_key=True, index=True)
+    current_node = Column(String)
+    next_deliver_k = Column(Integer, default=1)
+    picked_mask = Column(Integer, default=0)
+    plan_actions = Column(JSON, default=list)
+    plan_stops = Column(JSON, default=list)
+    last_plan_cost = Column(Integer, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
